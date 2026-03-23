@@ -7,6 +7,92 @@
     <body>
         <!-- .container is main centered wrapper -->
         <div class="container u-full-width u-max-full-width" id="main-container">
+            <!-- Settings Panel -->
+            <div class="row">
+                <div class="twelve columns">
+                    <details id="settings-panel">
+                        <summary>⚙ Settings</summary>
+                        <div id="settings-content">
+                            <!-- Connection Mode -->
+                            <div class="row">
+                                <div class="twelve columns">
+                                    <strong>Connection Mode</strong><br>
+                                    <label class="settings-radio-label">
+                                        <input type="radio" name="connection-mode" value="http" id="mode-http" checked>
+                                        HTTP REST API
+                                    </label>
+                                    <label class="settings-radio-label">
+                                        <input type="radio" name="connection-mode" value="mqtt" id="mode-mqtt">
+                                        MQTT
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- HTTP Settings -->
+                            <div id="http-settings-section">
+                                <div class="row">
+                                    <div class="twelve columns">
+                                        <label for="setting-ip-prefix">IP Range Prefix</label>
+                                        <input class="u-full-width" type="text" id="setting-ip-prefix" placeholder="192.168.0">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- MQTT Settings -->
+                            <div id="mqtt-settings-section" style="display:none">
+                                <div class="row">
+                                    <div class="twelve columns">
+                                        <label for="setting-mqtt-url">Broker URL (WebSocket)</label>
+                                        <input class="u-full-width" type="text" id="setting-mqtt-url" placeholder="ws://192.168.0.1:9001">
+                                        <p class="mqtt-note">⚠ Browsers can only connect to MQTT via WebSocket. To enable it in Mosquitto, add to <code>mosquitto.conf</code>: <code>listener 9001</code> then <code>protocol websockets</code>, then restart the broker.</p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="six columns">
+                                        <label for="setting-mqtt-user">Username (optional)</label>
+                                        <input class="u-full-width" type="text" id="setting-mqtt-user" autocomplete="off">
+                                    </div>
+                                    <div class="six columns">
+                                        <label for="setting-mqtt-pass">Password (optional)</label>
+                                        <input class="u-full-width" type="password" id="setting-mqtt-pass" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="twelve columns">
+                                        <button id="mqtt-test-btn">Test connection</button>
+                                        <span id="mqtt-status" class="mqtt-status-badge"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Audio Settings -->
+                            <div class="row">
+                                <div class="six columns">
+                                    <label for="setting-max-freq">Max Audio Frequency</label>
+                                    <input class="u-full-width" type="number" id="setting-max-freq" min="50" max="1024" value="280">
+                                </div>
+                                <div class="six columns">
+                                    <label for="setting-default-delay">Default Delay (ms)</label>
+                                    <input class="u-full-width" type="number" id="setting-default-delay" min="0" max="5000" value="200">
+                                </div>
+                            </div>
+                            <!-- Channels JSON -->
+                            <div class="row">
+                                <div class="twelve columns">
+                                    <label for="setting-channels">Channels (JSON)</label>
+                                    <textarea class="u-full-width" id="setting-channels" rows="12" spellcheck="false"></textarea>
+                                    <small>Edit the channels array as JSON. See <code>config.json.example</code> for the format.</small>
+                                </div>
+                            </div>
+                            <!-- Action Buttons -->
+                            <div class="row">
+                                <div class="twelve columns">
+                                    <button id="settings-save" class="button-primary">Save &amp; Apply</button>
+                                    <button id="settings-reset">Reset from config.json</button>
+                                    <span id="settings-status"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
             <div class="row">
                 <div class="eight columns">
                     <label for="list-of-songs">Choose a song:</label>

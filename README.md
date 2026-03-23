@@ -10,28 +10,30 @@ Please feel free to check the source code and use it for your light show.
 If any bugs found just let me know
 
 ## How to configure?
-### Define channels
-Create a config.json from config.json.example. Currently only shelly1, shell1pm and shelly dimmer2 are supported and tested.
 
-### MQTT support
-The app can control Shelly devices either via **HTTP REST API** (default) or via **MQTT over WebSocket**.
+Configuration is done directly from the web page via the **⚙ Settings** panel at the top. Settings are saved in your browser's `localStorage` so they persist across page refreshes.
 
-To enable MQTT, add an `mqtt` block to your `config.json`:
+### Connection Mode
 
-```json
-{
-    "mqtt": {
-        "brokerUrl": "ws://192.168.0.1:9001",
-        "username": "",
-        "password": ""
-    }
-}
-```
+Choose between **HTTP REST API** (direct calls to the Shelly device) or **MQTT**.
 
-- `brokerUrl` – WebSocket URL of your MQTT broker (e.g. Mosquitto with `listener 9001` and `protocol websockets`). Use `wss://` for TLS.
-- `username` / `password` – optional credentials.
+#### HTTP Mode
+Enter the **IP Range Prefix** (e.g. `192.168.0`). Each device's `ip` field in the channels JSON is the last octet, so `192.168.0` + `.11` = `192.168.0.11`.
 
-When `mqtt.brokerUrl` is present the app will publish to Shelly MQTT topics:
+#### MQTT Mode
+Enter the **Broker URL** in WebSocket format (e.g. `ws://192.168.0.1:9001`).
+
+> ⚠ **Browsers can only connect to MQTT via WebSocket.** You must enable the WebSocket listener in Mosquitto:
+> ```
+> # mosquitto.conf
+> listener 9001
+> protocol websockets
+> ```
+> Then restart Mosquitto. Use `wss://` for TLS.
+
+Optionally provide a username and password. Use the **Test connection** button to verify connectivity before saving.
+
+MQTT topics follow the standard Shelly convention:
 
 | Device type | Command topic | Set topic (brightness / colour) |
 |-------------|---------------|----------------------------------|
@@ -39,9 +41,14 @@ When `mqtt.brokerUrl` is present the app will publish to Shelly MQTT topics:
 | dimmer1 / dimmer2 / shelly1l | `shellies/<name>/light/0/command` | `shellies/<name>/light/0/set` |
 | rgbw2 | `shellies/<name>/color/0/command` | `shellies/<name>/color/0/set` |
 
-The `<name>` is taken from the device `name` field in `config.json`. Make sure this matches the MQTT device ID configured on the Shelly device.
+The `<name>` is the device `name` field in the channels JSON — it must match the MQTT device ID configured on the Shelly.
 
-If no `mqtt` block is provided the app falls back to HTTP REST API calls.
+### Channels (JSON)
+
+The **Channels** textarea lets you define the full channel/device configuration as JSON.  
+See `config.json.example` for the complete format.
+
+Use **Reset from config.json** to reload the example file into the form without applying it, then edit and click **Save & Apply**.
 
 ### Define songs
 Create a songs.json from songs.json.example.
