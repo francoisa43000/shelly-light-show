@@ -118,3 +118,43 @@
     font-size: 1.3rem;
     vertical-align: middle;
 }
+
+/* Upload button */
+.upload-label {
+    display: block;
+    text-align: center;
+    cursor: pointer;
+    margin-top: 6px;
+}
+
+.upload-label input[type="file"] {
+    display: none;
+}
+
+/* Spotify collapsible note */
+.spotify-details {
+    margin-top: 6px;
+    font-size: 1.2rem;
+}
+
+.spotify-details > summary {
+    cursor: pointer;
+    color: #555;
+    user-select: none;
+    list-style: none;
+}
+
+.spotify-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.spotify-note {
+    font-size: 1.2rem;
+    color: #555;
+    background: #f5f5f5;
+    border-left: 3px solid #aaa;
+    padding: 6px 10px;
+    margin-top: 6px;
+    border-radius: 0 3px 3px 0;
+    line-height: 1.4;
+}

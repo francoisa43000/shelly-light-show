@@ -50,8 +50,23 @@ See `config.json.example` for the complete format.
 
 Use **Reset from config.json** to reload the example file into the form without applying it, then edit and click **Save & Apply**.
 
-### Define songs
-Create a songs.json from songs.json.example.
+### Adding music
+
+There are two ways to add music to the app:
+
+#### Upload directly from the browser (recommended)
+Click the **🎵 Add local music files…** button on the main page and pick one or more audio files (MP3, FLAC, WAV, OGG, …). The files are loaded into the browser's memory for the current session — no files are uploaded to any server.
+
+> **Session only:** uploaded songs are lost when you close or refresh the page. For a permanent playlist, use `songs.json` (see below).
+
+#### songs.json playlist
+Create a `songs.json` from `songs.json.example`. Each entry has a `name` and a `src` (relative path to a file served from the same HTTP server). If `songs.json` is missing or empty the app still works — just upload files directly.
+
+### Can Spotify be used?
+
+**No.** Spotify's audio is DRM-protected (Widevine) and its Web Playback SDK does not expose the raw audio samples required by the Web AudioContext visualizer. There is no way around this restriction — it is enforced both by Spotify's Terms of Service and by the browser's media pipeline.
+
+**Alternatives:** download your music as MP3/FLAC from a service that allows it (e.g. Bandcamp, SoundCloud free tracks, your own rips) and upload them using the button on the page.
 
 ## How to use?
 

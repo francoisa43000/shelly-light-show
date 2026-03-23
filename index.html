@@ -105,6 +105,20 @@
                     </label>
                 </div>
             </div>
+            <div class="row">
+                <div class="eight columns">
+                    <label for="upload-songs" class="upload-label button u-full-width">
+                        🎵 Add local music files…
+                        <input type="file" id="upload-songs" accept="audio/*" multiple>
+                    </label>
+                </div>
+                <div class="four columns">
+                    <details class="spotify-details">
+                        <summary>ℹ️ Can I use Spotify?</summary>
+                        <p class="spotify-note">No. Spotify audio is DRM-protected and its Web API does not expose the raw audio samples required by the visualizer. Use local MP3/FLAC/WAV files instead.</p>
+                    </details>
+                </div>
+            </div>
             <!-- columns should be the immediate child of a .row -->
             <div class="row">
                 <div class="twelve columns">

@@ -165,6 +165,7 @@ function createDebugElements() {
 function applyConfig(config) {
     activeConfig = config;
     maxAudioFrequency = config.maxAudioFrequency || 280;
+    activeConfig.defaultDelay = config.defaultDelay || 200;
     channels = config.channels || [];
     ipRangePrefix = config.ipRangePrefix || '';
     percentFactor = channels.length > 0 ? 100 / channels.length : 1;
@@ -426,7 +427,7 @@ function drawLightShow(channel, audioValue, bar) {
         if (statusHistory[lastCalculatedChannel] === undefined) statusHistory[lastCalculatedChannel] = [];
         let channelThreshold = channels[lastCalculatedChannel].threshold || threshold;
         const lastFiveHistoricalStatus = statusHistory[lastCalculatedChannel].slice(-numberOflastTurnOns);
-        const throttleDelay = channels[lastCalculatedChannel].delay || activeConfig.defaultDelay || 500;
+        const throttleDelay = channels[lastCalculatedChannel].delay || activeConfig.defaultDelay;
 
         if (lastFiveHistoricalStatus.length > 0) {
             const lastTurnOns = lastFiveHistoricalStatus.reduce((accumulator, currentValue) => accumulator + currentValue) || 0;
@@ -449,92 +450,157 @@ function drawLightShow(channel, audioValue, bar) {
     lastCalculatedChannel = channel;
 }
 
-// --- Main ---
-fetch('./songs.json')
-.then(response => response.json())
-.then(songs => {
-    songs.forEach(song => {
-        let option = document.createElement("option");
-        option.value = song.src;
-        option.text = song.name;
-        songsSelectorElement.add(option);
-    });
+// --- Song list (module-level) ---
+let songs = [];
+let audioContext = null;
+let analyser = null;
+let audioData = null;
+let canvasContext = null;
+let loopingStarted = false;
 
-    songsSelectorElement.addEventListener('change', event => {
-        if (event.target === undefined) return;
-        audioElement.src = event.target.value;
-    });
+/**
+ * Add a song to the in-memory list and the <select> dropdown.
+ * @param {string} name  Display name
+ * @param {string} src   URL or ObjectURL
+ */
+function addSongToList(name, src) {
+    songs.push({ name, src });
+    const option = document.createElement('option');
+    option.value = src;
+    option.text = name;
+    songsSelectorElement.add(option);
+}
 
-    if (songs.length === 0) return;
-
-    audioElement.src = songs[0].src;
-
-    const audioContext = new AudioContext();
+/** Set up the Web Audio pipeline (called once). */
+function initAudioContext() {
+    if (audioContext) return;
+    audioContext = new AudioContext();
     const source = audioContext.createMediaElementSource(audioElement);
-    const canvasContext = canvas.getContext("2d");
-    const analyser = audioContext.createAnalyser();
+    canvasContext = canvas.getContext('2d');
+    analyser = audioContext.createAnalyser();
     analyser.fftSize = analyserSize;
     source.connect(analyser);
     // this connects our music back to the default output, such as your speakers
     source.connect(audioContext.destination);
-    let audioData = new Uint8Array(analyser.frequencyBinCount);
-
-    function draw(data) {
-        data = [...data];
-        canvasContext.clearRect(0, 0, canvas.width, canvas.height);
-        let space = (canvas.width / maxAudioFrequency);
-
-        channelValuesSum = 0;
-        channelValuesCount = 1;
-        lastCalculatedChannel = 0;
-        if (channels.length === 0) return;
-        data.forEach((audioValue, bar) => {
-            let channel = calculateChannel(bar);
-            canvasContext.beginPath();
-            canvasContext.moveTo(space * bar, canvas.height - (canvas.height / 3));
-            canvasContext.lineTo(space * bar, canvas.height - (audioValue * 1.2));
-            canvasContext.lineWidth = space / 2;
-            canvasContext.strokeStyle = channels[channel].color;
-            canvasContext.stroke();
-            drawLightShow(channel, audioValue, bar);
-        });
-    }
-
-    function loopingFunction() {
-        requestAnimationFrame(loopingFunction);
-        analyser.getByteFrequencyData(audioData);
-        // analyser.getByteTimeDomainData(audioData);
-        audioData.slice(maxAudioFrequency);
-        draw(audioData);
-    }
-
+    audioData = new Uint8Array(analyser.frequencyBinCount);
     audioElement.onplay = () => audioContext.resume();
+}
 
-    audioElement.onended = () => {
-        if (songsSelectorElement.selectedIndex >= (songs.length - 1)) {
-            if (!document.getElementById('replay-songs-list').checked) return;
-            songsSelectorElement.selectedIndex = -1;
-        }
-        songsSelectorElement.selectedIndex++;
-        songsSelectorElement.dispatchEvent(new Event('change'));
-        setTimeout(() => audioElement.play(), 1000);
-    };
+/** Start the animation loop (guarded — only starts once). */
+function startLooping() {
+    if (loopingStarted) return;
+    loopingStarted = true;
+    requestAnimationFrame(loopingFunction);
+}
 
-    // Initialize settings panel event handlers
-    initSettingsPanel();
+function draw(data) {
+    if (!canvasContext) return;
+    data = [...data];
+    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+    let space = (canvas.width / maxAudioFrequency);
 
-    // Load config (localStorage first, then config.json) and start
-    loadConfig()
-        .then(config => {
-            populateSettingsPanel(config);
-            applyConfig(config);
-            requestAnimationFrame(loopingFunction);
-        })
-        .catch(error => {
-            console.error('Error loading config:', error);
-            // Still start the animation even without config
-            requestAnimationFrame(loopingFunction);
+    channelValuesSum = 0;
+    channelValuesCount = 1;
+    lastCalculatedChannel = 0;
+    if (channels.length === 0) {
+        canvasContext.fillStyle = '#888';
+        canvasContext.font = '14px sans-serif';
+        canvasContext.textAlign = 'center';
+        canvasContext.fillText(
+            'No channels configured — open ⚙ Settings to set up your devices',
+            canvas.width / 2, canvas.height / 2
+        );
+        return;
+    }
+    data.forEach((audioValue, bar) => {
+        let channel = calculateChannel(bar);
+        canvasContext.beginPath();
+        canvasContext.moveTo(space * bar, canvas.height - (canvas.height / 3));
+        canvasContext.lineTo(space * bar, canvas.height - (audioValue * 1.2));
+        canvasContext.lineWidth = space / 2;
+        canvasContext.strokeStyle = channels[channel].color;
+        canvasContext.stroke();
+        drawLightShow(channel, audioValue, bar);
+    });
+}
+
+function loopingFunction() {
+    requestAnimationFrame(loopingFunction);
+    if (!analyser || !audioData) return;
+    analyser.getByteFrequencyData(audioData);
+    // analyser.getByteTimeDomainData(audioData);
+    audioData.slice(maxAudioFrequency);
+    draw(audioData);
+}
+
+// --- Upload handler ---
+function initUpload() {
+    const uploadInput = document.getElementById('upload-songs');
+    if (!uploadInput) return;
+
+    uploadInput.addEventListener('change', event => {
+        const files = Array.from(event.target.files);
+        files.forEach(file => {
+            const url = URL.createObjectURL(file);
+            // Strip extension for display name
+            const name = file.name.replace(/\.[^/.]+$/, '');
+            addSongToList(name, url);
         });
-}).catch(error => {
-    console.error('Error:', error);
+
+        // Auto-select the first uploaded song when nothing is loaded yet
+        if (files.length > 0 && songsSelectorElement.selectedIndex === -1) {
+            const firstUploadedIndex = songs.length - files.length;
+            songsSelectorElement.selectedIndex = firstUploadedIndex;
+            audioElement.src = songs[firstUploadedIndex].src;
+        }
+
+        // Reset input so the same file can be re-added if needed
+        uploadInput.value = '';
+    });
+}
+
+// --- Song selector change ---
+songsSelectorElement.addEventListener('change', event => {
+    if (!event.target) return;
+    audioElement.src = event.target.value;
 });
+
+// --- End of song: advance to next ---
+audioElement.onended = () => {
+    const totalSongs = songsSelectorElement.options.length;
+    if (songsSelectorElement.selectedIndex >= (totalSongs - 1)) {
+        if (!document.getElementById('replay-songs-list').checked) return;
+        songsSelectorElement.selectedIndex = -1;
+    }
+    songsSelectorElement.selectedIndex++;
+    songsSelectorElement.dispatchEvent(new Event('change'));
+    setTimeout(() => audioElement.play(), 1000);
+};
+
+// --- Main initialization ---
+initAudioContext();
+initUpload();
+initSettingsPanel();
+
+// Load songs list from server (optional — works fine if absent)
+fetch('./songs.json')
+    .then(r => r.json())
+    .then(serverSongs => {
+        serverSongs.forEach(song => addSongToList(song.name, song.src));
+        if (songs.length > 0) {
+            audioElement.src = songs[0].src;
+        }
+    })
+    .catch(error => console.warn('Could not load songs.json (this is OK — use the upload button to add music):', error));
+
+// Load device config (localStorage first, then config.json) and start
+loadConfig()
+    .then(config => {
+        populateSettingsPanel(config);
+        applyConfig(config);
+        startLooping();
+    })
+    .catch(error => {
+        console.error('Error loading config:', error);
+        startLooping();
+    });
