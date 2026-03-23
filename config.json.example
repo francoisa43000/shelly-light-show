@@ -1,5 +1,10 @@
 {
     "ipRangePrefix": "192.168.0",
+    "mqtt": {
+        "brokerUrl": "ws://192.168.0.1:9001",
+        "username": "",
+        "password": ""
+    },
     "defaultDelay": 200,
     "maxAudioFrequency": 350,
     "channels": [

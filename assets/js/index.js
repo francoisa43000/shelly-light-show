@@ -94,7 +94,8 @@ fetch('./songs.json')
         debugDivElementsContainer;
     let deviceColors = {};
     let lastColors = {};
-    
+    let mqttClient = null;
+
 
     fetch('./config.json')
     .then(response => response.json())
@@ -104,6 +105,19 @@ fetch('./songs.json')
         channels = config.channels;
         ipRangePrefix = config.ipRangePrefix;
         percentFactor = 100 / channels.length;
+
+        if (config.mqtt && config.mqtt.brokerUrl) {
+            const mqttOptions = {};
+            if (config.mqtt.username) {
+                mqttOptions.username = config.mqtt.username;
+            }
+            if (config.mqtt.password) {
+                mqttOptions.password = config.mqtt.password;
+            }
+            mqttClient = mqtt.connect(config.mqtt.brokerUrl, mqttOptions);
+            mqttClient.on('connect', () => console.log('MQTT connected to', config.mqtt.brokerUrl));
+            mqttClient.on('error', error => console.error('MQTT error', error));
+        }
         createDebugElements();
         fitToContainer(canvas);
 
@@ -190,6 +204,54 @@ fetch('./songs.json')
             return deviceColors[colorId][lastColors[colorId]] || false;
         }
 
+        function lightsHttp(channel, device, deviceId, turn, timer, calculatedBrightness) {
+            let brightness = '';
+            let color = '';
+            if (dimmerables.indexOf(device.type) !== -1) {
+                brightness = `&brightness=${calculatedBrightness}`;
+            }
+
+            if (colorful.indexOf(device.type) !== -1) {
+                let colors = getColors(channel.name, deviceId);
+
+                color = colors !== false ? `&red=${colors.red}&green=${colors.green}&blue=${colors.blue}` : '';
+            }
+
+            let requestOptions = {
+                method: 'GET',
+                redirect: 'follow',
+                mode: 'no-cors'
+            };
+
+            fetch(`http://${ipRangePrefix}.${device.ip}/${shellyEndPoint(device.type)}/0?turn=${turn}${timer}${brightness}${color}`, requestOptions)
+                .then(response => response.text())
+                .catch(error => console.log('error', error));
+        }
+
+        function lightsMqtt(channel, device, deviceId, turn, calculatedBrightness) {
+            const endpoint = shellyEndPoint(device.type);
+            const deviceName = device.name;
+            const commandTopic = `shellies/${deviceName}/${endpoint}/0/command`;
+
+            mqttClient.publish(commandTopic, turn, error => { if (error) console.error('MQTT publish error', error); });
+
+            if (dimmerables.indexOf(device.type) !== -1) {
+                const setTopic = `shellies/${deviceName}/${endpoint}/0/set`;
+                const payload = { brightness: calculatedBrightness };
+
+                if (colorful.indexOf(device.type) !== -1) {
+                    let colors = getColors(channel.name, deviceId);
+                    if (colors !== false) {
+                        payload.red = colors.red;
+                        payload.green = colors.green;
+                        payload.blue = colors.blue;
+                    }
+                }
+
+                mqttClient.publish(setTopic, JSON.stringify(payload), error => { if (error) console.error('MQTT publish error', error); });
+            }
+        }
+
         function lights(channelId, turnOn, calculatedBrightness) {
             if (channelId === undefined) {
                 return;
@@ -203,33 +265,17 @@ fetch('./songs.json')
             let channel = channels[channelId];
             let turn = turnOn ? 'on': 'off';
             let timer = turnOn ? '&timer=1' : '';
-            let requestOptions = {
-                method: 'GET',
-                redirect: 'follow',
-                mode: 'no-cors'
-            };
 
             if (channel.devices === undefined) {
                 return;
             }
 
             channel.devices.forEach(async (device, deviceId) => {
-                let brightness = '';
-                let color = '';
-                if (dimmerables.indexOf(device.type) !== -1) {
-                    brightness = `&brightness=${calculatedBrightness}`;
+                if (mqttClient !== null) {
+                    lightsMqtt(channel, device, deviceId, turn, calculatedBrightness);
+                } else {
+                    lightsHttp(channel, device, deviceId, turn, timer, calculatedBrightness);
                 }
-
-                if (colorful.indexOf(device.type) !== -1) {
-                    let colors = getColors(channel.name, deviceId);
-
-                    color = colors !== false ? `&red=${colors.red}&green=${colors.green}&blue=${colors.blue}` : '';
-                }
-                
-                fetch(`http://${ipRangePrefix}.${device.ip}/${shellyEndPoint(device.type)}/0?turn=${turn}${timer}${brightness}${color}`, requestOptions)
-                    .then(response => response.text())
-                    // .then(result => console.log(result))
-                    .catch(error => console.log('error', error));
             });
         }
 

@@ -13,8 +13,38 @@ If any bugs found just let me know
 ### Define channels
 Create a config.json from config.json.example. Currently only shelly1, shell1pm and shelly dimmer2 are supported and tested.
 
+### MQTT support
+The app can control Shelly devices either via **HTTP REST API** (default) or via **MQTT over WebSocket**.
+
+To enable MQTT, add an `mqtt` block to your `config.json`:
+
+```json
+{
+    "mqtt": {
+        "brokerUrl": "ws://192.168.0.1:9001",
+        "username": "",
+        "password": ""
+    }
+}
+```
+
+- `brokerUrl` – WebSocket URL of your MQTT broker (e.g. Mosquitto with `listener 9001` and `protocol websockets`). Use `wss://` for TLS.
+- `username` / `password` – optional credentials.
+
+When `mqtt.brokerUrl` is present the app will publish to Shelly MQTT topics:
+
+| Device type | Command topic | Set topic (brightness / colour) |
+|-------------|---------------|----------------------------------|
+| shelly1 / shelly1pm | `shellies/<name>/relay/0/command` | – |
+| dimmer1 / dimmer2 / shelly1l | `shellies/<name>/light/0/command` | `shellies/<name>/light/0/set` |
+| rgbw2 | `shellies/<name>/color/0/command` | `shellies/<name>/color/0/set` |
+
+The `<name>` is taken from the device `name` field in `config.json`. Make sure this matches the MQTT device ID configured on the Shelly device.
+
+If no `mqtt` block is provided the app falls back to HTTP REST API calls.
+
 ### Define songs
-Creae a songs.json from songs.json.example.
+Create a songs.json from songs.json.example.
 
 ## How to use?
 
