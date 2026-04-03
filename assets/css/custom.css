@@ -30,3 +30,131 @@
 #source {
     width: 100%;
 }
+
+/* Settings Panel */
+#settings-panel {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+#settings-panel > summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    font-weight: bold;
+    user-select: none;
+    background: #f8f8f8;
+    border-radius: 4px;
+    list-style: none;
+}
+
+#settings-panel > summary::-webkit-details-marker {
+    display: none;
+}
+
+#settings-panel[open] > summary {
+    border-bottom: 1px solid #ddd;
+    border-radius: 4px 4px 0 0;
+}
+
+#settings-content {
+    padding: 16px;
+}
+
+.settings-radio-label {
+    display: inline-block;
+    margin-right: 20px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.mqtt-note {
+    font-size: 1.2rem;
+    color: #856404;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 3px;
+    padding: 6px 10px;
+    margin-top: 4px;
+}
+
+.mqtt-status-badge {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    background: #eee;
+    color: #555;
+    vertical-align: middle;
+}
+
+.mqtt-status-badge.connected {
+    background: #d4edda;
+    color: #155724;
+}
+
+.mqtt-status-badge.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.mqtt-status-badge.connecting {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.settings-status-ok {
+    color: #155724;
+    margin-left: 12px;
+}
+
+.settings-status-error {
+    color: #721c24;
+    margin-left: 12px;
+}
+
+#settings-status {
+    font-size: 1.3rem;
+    vertical-align: middle;
+}
+
+/* Upload button */
+.upload-label {
+    display: block;
+    text-align: center;
+    cursor: pointer;
+    margin-top: 6px;
+}
+
+.upload-label input[type="file"] {
+    display: none;
+}
+
+/* Spotify collapsible note */
+.spotify-details {
+    margin-top: 6px;
+    font-size: 1.2rem;
+}
+
+.spotify-details > summary {
+    cursor: pointer;
+    color: #555;
+    user-select: none;
+    list-style: none;
+}
+
+.spotify-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.spotify-note {
+    font-size: 1.2rem;
+    color: #555;
+    background: #f5f5f5;
+    border-left: 3px solid #aaa;
+    padding: 6px 10px;
+    margin-top: 6px;
+    border-radius: 0 3px 3px 0;
+    line-height: 1.4;
+}
